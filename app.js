@@ -36,7 +36,12 @@ const clientUrls = (process.env.CLIENT_URL || '')
   .map((url) => url.trim())
   .filter(Boolean);
 
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://the-unique-mens-wear.vercel.app',
+  'https://cloth-shop-frontend-beta.vercel.app',
+];
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...clientUrls]));
 
 app.use(

@@ -223,6 +223,11 @@ exports.createOrder = async (req, res, next) => {
       // Clear cart
       if (req.user) {
         await Cart.findOneAndUpdate({ user: req.user._id }, { items: [], coupon: null, couponDiscount: 0, subtotal: 0, finalAmount: 0 });
+      } else {
+        const guestId = req.headers['x-guest-id'] || req.body.guestId;
+        if (guestId) {
+          await Cart.findOneAndUpdate({ guestId: guestId }, { items: [], coupon: null, couponDiscount: 0, subtotal: 0, finalAmount: 0 });
+        }
       }
 
       // Send email
@@ -322,23 +327,25 @@ exports.trackOrderPublic = async (req, res, next) => {
   try {
     const { orderNumber, contact } = req.body;
 
-    if (!orderNumber || !contact) {
+    if (!orderNumber) {
       return res.status(400).json({
         success: false,
-        message: 'Order number and registered email or phone are required',
+        message: 'Order number is required',
       });
     }
 
     const cleanOrderNumber = orderNumber.trim();
-    const cleanContact = contact.toLowerCase().trim();
+    const query = { orderNumber: cleanOrderNumber };
 
-    const order = await Order.findOne({
-      orderNumber: cleanOrderNumber,
-      $or: [
+    if (contact && contact.trim()) {
+      const cleanContact = contact.toLowerCase().trim();
+      query.$or = [
         { 'customerInfo.email': cleanContact },
         { 'customerInfo.phone': cleanContact },
-      ],
-    });
+      ];
+    }
+
+    const order = await Order.findOne(query);
 
     if (!order) {
       return res.status(404).json({

@@ -131,12 +131,20 @@ exports.verifyPayment = async (req, res, next) => {
       }
     }
 
-    // 7. Clear user cart if authenticated
+    // 7. Clear user cart if authenticated, or guest cart
     if (order.user) {
       await Cart.findOneAndUpdate(
         { user: order.user },
         { items: [], coupon: null, couponDiscount: 0, subtotal: 0, finalAmount: 0 }
       );
+    } else {
+      const guestId = req.headers['x-guest-id'] || req.body.guestId;
+      if (guestId) {
+        await Cart.findOneAndUpdate(
+          { guestId: guestId },
+          { items: [], coupon: null, couponDiscount: 0, subtotal: 0, finalAmount: 0 }
+        );
+      }
     }
 
     // 8. Trigger order confirmation email
