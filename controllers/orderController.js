@@ -243,10 +243,19 @@ exports.createOrder = async (req, res, next) => {
     }
 
     // If Razorpay: create Razorpay order
-    const razorpayOrder = await createRazorpayOrder(finalAmount, order.orderNumber, {
-      orderNumber: order.orderNumber,
-      customerEmail: order.customerInfo.email,
-    });
+    let razorpayOrder;
+    try {
+      razorpayOrder = await createRazorpayOrder(finalAmount, order.orderNumber, {
+        orderNumber: order.orderNumber,
+        customerEmail: order.customerInfo.email,
+      });
+    } catch (rzpErr) {
+      console.error('Razorpay order creation failed:', rzpErr);
+      return res.status(502).json({
+        success: false,
+        message: `Payment gateway error: ${rzpErr.message || 'Failed to initialize payment with Razorpay'}`,
+      });
+    }
 
     order.paymentInfo.razorpayOrderId = razorpayOrder.id;
     await order.save();
